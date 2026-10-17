@@ -1,4 +1,4 @@
-name: Android build
+name: Android build (arm64 only)
 
 on:
   push:
@@ -36,12 +36,21 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Every project is self-contained with its own wrapper. JDK 21 is supplied above, so Gradle
-      # never needs to download a toolchain; disabling that keeps the build offline-deterministic.
-      - name: Build debug APK
+      - name: Build arm64-v8a debug APK
         working-directory: ${{ matrix.project }}
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace \
             -Dorg.gradle.java.installations.auto-download=false \
+            -Pandroid.injected.abi.filters=arm64-v8a \
             :app:assembleDebug
+
+      - name: Upload arm64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.project }}-arm64-debug
+          path: |
+            ${{ matrix.project }}/app/build/outputs/apk/**/*arm64*.apk
+            ${{ matrix.project }}/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+          retention-days: 14
